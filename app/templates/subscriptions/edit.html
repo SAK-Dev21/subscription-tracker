@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Subscription - Subscription Tracker{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Edit Subscription</h2>
+    <form method="POST" action="{{ url_for('subscriptions.edit', id=subscription.id) }}">
+        <div class="form-group">
+            <label for="service_name">Subscription Name</label>
+            <input type="text" id="service_name" name="service_name" value="{{ subscription.service_name }}" required>
+        </div>
+        <div class="form-group">
+            <label for="cost">Cost (&pound;)</label>
+            <input type="number" id="cost" name="cost" step="0.01" min="0" value="{{ subscription.cost }}" required>
+        </div>
+        <div class="form-group">
+            <label for="billing_cycle">Billing Cycle</label>
+            <select id="billing_cycle" name="billing_cycle">
+                <option value="monthly" {% if subscription.billing_cycle == 'monthly' %}selected{% endif %}>Monthly</option>
+                <option value="weekly" {% if subscription.billing_cycle == 'weekly' %}selected{% endif %}>Weekly</option>
+                <option value="yearly" {% if subscription.billing_cycle == 'yearly' %}selected{% endif %}>Yearly</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="next_payment_date">Next Payment Date</label>
+            <input type="date" id="next_payment_date" name="next_payment_date" value="{{ subscription.next_payment_date if subscription.next_payment_date else '' }}">
+        </div>
+        <div class="form-group">
+            <label for="category">Category</label>
+            <input type="text" id="category" name="category" value="{{ subscription.category if subscription.category else '' }}" placeholder="e.g. Entertainment, Productivity">
+        </div>
+        <button type="submit" class="btn btn-primary">Update Subscription</button>
+    </form>
+</div>
+{% endblock %}

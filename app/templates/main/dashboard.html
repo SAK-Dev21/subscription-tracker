@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Subscription Tracker{% endblock %}
+
+{% block content %}
+<h2>Dashboard</h2>
+<p>Welcome, {{ current_user.username }}!</p>
+
+<div class="summary">
+    <p>Total Monthly Spend: <strong>&pound;{{ "%.2f"|format(total_monthly) }}</strong></p>
+    <p>Active Subscriptions: <strong>{{ subscriptions|length }}</strong></p>
+</div>
+
+<div class="actions">
+    <a href="{{ url_for('subscriptions.add') }}" class="btn btn-primary">Add Subscription</a>
+</div>
+
+{% if subscriptions %}
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Cost</th>
+            <th>Billing Cycle</th>
+            <th>Next Payment Date</th>
+            <th>Category</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sub in subscriptions %}
+        <tr>
+            <td>{{ sub.service_name }}</td>
+            <td>&pound;{{ "%.2f"|format(sub.cost) }}</td>
+            <td>{{ sub.billing_cycle }}</td>
+            <td>{{ sub.next_payment_date if sub.next_payment_date else 'N/A' }}</td>
+            <td>{{ sub.category if sub.category else 'N/A' }}</td>
+            <td>
+                <a href="{{ url_for('subscriptions.edit', id=sub.id) }}" class="btn btn-secondary">Edit</a>
+                <form method="POST" action="{{ url_for('subscriptions.delete', id=sub.id) }}" style="display:inline;">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No subscriptions yet. Add one to get started!</p>
+{% endif %}
+{% endblock %}

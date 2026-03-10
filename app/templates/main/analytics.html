@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Subscription Tracker{% endblock %}
+
+{% block content %}
+<h2>Analytics</h2>
+
+{% if subscriptions %}
+<div class="analytics-summary">
+    <h3>Spending by Category</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Monthly Cost</th>
+                <th>Number of Subscriptions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% set categories = {} %}
+            {% for sub in subscriptions %}
+                {% set cat = sub.category if sub.category else 'Uncategorised' %}
+                {% if cat in categories %}
+                    {% set _ = categories.update({cat: {'cost': categories[cat].cost + sub.monthly_cost, 'count': categories[cat].count + 1}}) %}
+                {% else %}
+                    {% set _ = categories.update({cat: {'cost': sub.monthly_cost, 'count': 1}}) %}
+                {% endif %}
+            {% endfor %}
+            {% for cat, data in categories.items() %}
+            <tr>
+                <td>{{ cat }}</td>
+                <td>&pound;{{ "%.2f"|format(data.cost) }}</td>
+                <td>{{ data.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p>No subscriptions to analyse. <a href="{{ url_for('subscriptions.add') }}">Add one</a> to see analytics.</p>
+{% endif %}
+{% endblock %}
