@@ -10,11 +10,25 @@ from datetime import datetime
 @login_required
 def add():
     if request.method == 'POST':
-        service_name = request.form.get('service_name')
-        cost = float(request.form.get('cost'))
+        service_name = request.form.get('service_name', '').strip()
+        cost_str = request.form.get('cost', '')
         billing_cycle = request.form.get('billing_cycle', 'monthly')
         next_payment_date_str = request.form.get('next_payment_date')
-        category = request.form.get('category')
+        category = request.form.get('category', 'other')
+        cancellation_url = request.form.get('cancellation_url', '').strip() or None
+        notes = request.form.get('notes', '').strip() or None
+
+        if not service_name:
+            flash('Service name is required.', 'danger')
+            return render_template('subscriptions/add.html')
+
+        try:
+            cost = float(cost_str)
+            if cost < 0:
+                raise ValueError
+        except ValueError:
+            flash('Cost must be a positive number.', 'danger')
+            return render_template('subscriptions/add.html')
 
         next_payment_date = None
         if next_payment_date_str:
@@ -26,6 +40,8 @@ def add():
             billing_cycle=billing_cycle,
             next_payment_date=next_payment_date,
             category=category,
+            cancellation_url=cancellation_url,
+            notes=notes,
             user_id=current_user.id
         )
         db.session.add(subscription)
@@ -47,11 +63,32 @@ def edit(id):
         return redirect(url_for('main.dashboard'))
 
     if request.method == 'POST':
-        subscription.service_name = request.form.get('service_name')
-        subscription.cost = float(request.form.get('cost'))
-        subscription.billing_cycle = request.form.get('billing_cycle', 'monthly')
+        service_name = request.form.get('service_name', '').strip()
+        cost_str = request.form.get('cost', '')
+        billing_cycle = request.form.get('billing_cycle', 'monthly')
         next_payment_date_str = request.form.get('next_payment_date')
-        subscription.category = request.form.get('category')
+        category = request.form.get('category', 'other')
+        cancellation_url = request.form.get('cancellation_url', '').strip() or None
+        notes = request.form.get('notes', '').strip() or None
+
+        if not service_name:
+            flash('Service name is required.', 'danger')
+            return render_template('subscriptions/edit.html', subscription=subscription)
+
+        try:
+            cost = float(cost_str)
+            if cost < 0:
+                raise ValueError
+        except ValueError:
+            flash('Cost must be a positive number.', 'danger')
+            return render_template('subscriptions/edit.html', subscription=subscription)
+
+        subscription.service_name = service_name
+        subscription.cost = cost
+        subscription.billing_cycle = billing_cycle
+        subscription.category = category
+        subscription.cancellation_url = cancellation_url
+        subscription.notes = notes
 
         if next_payment_date_str:
             subscription.next_payment_date = datetime.strptime(next_payment_date_str, '%Y-%m-%d').date()

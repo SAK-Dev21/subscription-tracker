@@ -9,7 +9,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
     monthly_budget = db.Column(db.Float, default=0.0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     subscriptions = db.relationship(
         'Subscription', back_populates='owner', lazy=True, cascade='all, delete-orphan'
     )
@@ -36,7 +36,7 @@ class Subscription(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     cancellation_url = db.Column(db.String(500), nullable=True)
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     owner = db.relationship('User', back_populates='subscriptions')
 
     @property
