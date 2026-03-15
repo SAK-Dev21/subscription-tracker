@@ -1,32 +1,82 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Upcoming Bills - Subscription Tracker{% endblock %}
+{% block title %}Upcoming Bills — SubTracker{% endblock %}
 
 {% block content %}
-<h2>Upcoming Bills (Next 30 Days)</h2>
+<h2 class="mb-4">Upcoming Bills</h2>
 
+<!-- Summary cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card border-danger shadow-sm text-center">
+            <div class="card-body">
+                <p class="text-muted mb-1 small">Due in 7 days</p>
+                <h4 class="text-danger mb-0">£{{ '%.2f' | format(total_7_days) }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning shadow-sm text-center">
+            <div class="card-body">
+                <p class="text-muted mb-1 small">Due in 14 days</p>
+                <h4 class="text-warning mb-0">£{{ '%.2f' | format(total_14_days) }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info shadow-sm text-center">
+            <div class="card-body">
+                <p class="text-muted mb-1 small">Due in 30 days</p>
+                <h4 class="text-info mb-0">£{{ '%.2f' | format(total_30_days) }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bills list -->
 {% if upcoming %}
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Cost</th>
-            <th>Next Payment Date</th>
-            <th>Category</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for sub in upcoming %}
-        <tr>
-            <td>{{ sub.service_name }}</td>
-            <td>&pound;{{ "%.2f"|format(sub.cost) }}</td>
-            <td>{{ sub.next_payment_date }}</td>
-            <td>{{ sub.category if sub.category else 'N/A' }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div>
+    {% for entry in upcoming %}
+    {% set sub = entry.sub %}
+    {% set days = entry.days %}
+    {% set u = entry.urgency %}
+
+    {% if u == 'overdue' or u == 'urgent' %}
+        {% set border_style = 'border-left: 3px solid #dc2626 !important;' %}
+        {% set badge_class  = 'bg-danger' %}
+    {% elif u == 'soon' %}
+        {% set border_style = 'border-left: 3px solid #ffc107 !important;' %}
+        {% set badge_class  = 'bg-warning text-dark' %}
+    {% elif u == 'upcoming' %}
+        {% set border_style = 'border-left: 3px solid #0dcaf0 !important;' %}
+        {% set badge_class  = 'bg-info text-dark' %}
+    {% else %}
+        {% set border_style = 'border-left: 3px solid #6c757d !important;' %}
+        {% set badge_class  = 'bg-secondary' %}
+    {% endif %}
+
+    <div class="card shadow-sm mb-4" style="{{ border_style }}">
+        <div class="card-body d-flex justify-content-between align-items-center py-4">
+            <div>
+                <span class="fw-semibold">{{ sub.service_name }}</span>
+                <span class="text-muted ms-2 small">£{{ '%.2f' | format(sub.cost) }} / {{ sub.billing_cycle }}</span>
+                <div class="text-muted small mt-1">
+                    <i class="bi bi-calendar3"></i>
+                    Due {{ sub.next_payment_date.strftime('%d %b %Y') }}
+                </div>
+            </div>
+            <span class="badge {{ badge_class }} ms-3">
+                {% if u == 'overdue' %}Overdue{% else %}{{ days }} day{{ 's' if days != 1 else '' }}{% endif %}
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% else %}
-<p>No upcoming bills in the next 30 days.</p>
+<div class="text-center text-muted py-5">
+    <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+    <h5>No upcoming bills</h5>
+    <p class="mb-0">You have no active subscriptions due right now.</p>
+</div>
 {% endif %}
 {% endblock %}

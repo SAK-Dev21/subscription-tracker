@@ -1,42 +1,146 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Analytics - Subscription Tracker{% endblock %}
+{% block title %}Spending Analytics — SubTracker{% endblock %}
 
 {% block content %}
-<h2>Analytics</h2>
+<h2 class="mb-4">Spending Analytics</h2>
 
-{% if subscriptions %}
-<div class="analytics-summary">
-    <h3>Spending by Category</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Category</th>
-                <th>Monthly Cost</th>
-                <th>Number of Subscriptions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% set categories = {} %}
-            {% for sub in subscriptions %}
-                {% set cat = sub.category if sub.category else 'Uncategorised' %}
-                {% if cat in categories %}
-                    {% set _ = categories.update({cat: {'cost': categories[cat].cost + sub.monthly_cost, 'count': categories[cat].count + 1}}) %}
-                {% else %}
-                    {% set _ = categories.update({cat: {'cost': sub.monthly_cost, 'count': 1}}) %}
-                {% endif %}
-            {% endfor %}
-            {% for cat, data in categories.items() %}
-            <tr>
-                <td>{{ cat }}</td>
-                <td>&pound;{{ "%.2f"|format(data.cost) }}</td>
-                <td>{{ data.count }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- Charts row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Spending by Category</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="categoryChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Top 5 Most Expensive Subscriptions</div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="topSubsChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
-{% else %}
-<p>No subscriptions to analyse. <a href="{{ url_for('subscriptions.add') }}">Add one</a> to see analytics.</p>
-{% endif %}
+
+<!-- Stat cards row -->
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <p class="text-muted mb-1 small">Total Monthly Spend</p>
+                <h4 class="mb-0">£{{ '%.2f' | format(total_monthly) }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <p class="text-muted mb-1 small">Active Subscriptions</p>
+                <h4 class="mb-0">{{ subscription_count }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <p class="text-muted mb-1 small">Average Monthly Cost</p>
+                <h4 class="mb-0">£{{ '%.2f' | format(average_cost) }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <p class="text-muted mb-1 small">Most Expensive</p>
+                {% if most_expensive %}
+                <h4 class="mb-0">£{{ '%.2f' | format(most_expensive.monthly_cost) }}</h4>
+                <p class="text-muted small mb-0">{{ most_expensive.service_name }}</p>
+                {% else %}
+                <h4 class="mb-0">—</h4>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const categoryLabels = {{ category_labels | tojson }};
+    const categoryValues = {{ category_values | tojson }};
+    const topNames = {{ top_names | tojson }};
+    const topCosts = {{ top_costs | tojson }};
+
+    const categoryColours = {
+        entertainment: '#9b59b6',
+        food: '#e67e22',
+        software: '#3498db',
+        fitness: '#2ecc71',
+        utilities: '#95a5a6',
+        other: '#e91e8c'
+    };
+
+    const bgColours = categoryLabels.map(l => categoryColours[l] || '#cccccc');
+
+    // Doughnut — spending by category
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryValues,
+                backgroundColor: bgColours,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` £${ctx.parsed.toFixed(2)}`
+                    }
+                }
+            }
+        }
+    });
+
+    // Horizontal bar — top 5 subscriptions
+    new Chart(document.getElementById('topSubsChart'), {
+        type: 'bar',
+        data: {
+            labels: topNames,
+            datasets: [{
+                label: 'Monthly Cost (£)',
+                data: topCosts,
+                backgroundColor: '#3498db',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` £${ctx.parsed.x.toFixed(2)}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: v => `£${v}`
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

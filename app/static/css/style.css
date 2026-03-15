@@ -1,3 +1,8 @@
+/* Bootstrap colour overrides */
+:root {
+    --bs-danger-rgb: 220, 38, 38;
+}
+
 /* General Reset */
 *, *::before, *::after {
     box-sizing: border-box;

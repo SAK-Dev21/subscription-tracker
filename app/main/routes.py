@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app.main import main_bp
 from app.models import Subscription
 from app.extensions import db
-from datetime import datetime, timedelta, date as date_type
+from datetime import datetime, date as date_type
 from calendar import monthrange
 
 
@@ -132,17 +132,76 @@ def update_budget():
 @main_bp.route('/analytics')
 @login_required
 def analytics():
-    subscriptions = Subscription.query.filter_by(user_id=current_user.id).all()
-    return render_template('main/analytics.html', subscriptions=subscriptions)
+    active_subs = [s for s in Subscription.query.filter_by(user_id=current_user.id).all() if s.is_active]
+
+    # spending by category
+    spending_by_category = {}
+    for s in active_subs:
+        spending_by_category[s.category] = spending_by_category.get(s.category, 0) + s.monthly_cost
+
+    # top 5 by monthly cost
+    top_subscriptions = sorted(
+        [(s.service_name, round(s.monthly_cost, 2)) for s in active_subs],
+        key=lambda x: x[1], reverse=True
+    )[:5]
+
+    total_monthly = sum(s.monthly_cost for s in active_subs)
+    subscription_count = len(active_subs)
+    average_cost = total_monthly / subscription_count if subscription_count > 0 else 0
+
+    most_expensive = max(active_subs, key=lambda s: s.monthly_cost, default=None)
+    cheapest = min(active_subs, key=lambda s: s.monthly_cost, default=None)
+
+    category_labels = list(spending_by_category.keys())
+    category_values = [round(v, 2) for v in spending_by_category.values()]
+    top_names = [t[0] for t in top_subscriptions]
+    top_costs = [t[1] for t in top_subscriptions]
+
+    return render_template('main/analytics.html',
+                           spending_by_category=spending_by_category,
+                           total_monthly=total_monthly,
+                           subscription_count=subscription_count,
+                           average_cost=average_cost,
+                           most_expensive=most_expensive,
+                           cheapest=cheapest,
+                           category_labels=category_labels,
+                           category_values=category_values,
+                           top_names=top_names,
+                           top_costs=top_costs)
 
 
 @main_bp.route('/upcoming-bills')
 @login_required
 def upcoming_bills():
     today = datetime.now().date()
-    upcoming = Subscription.query.filter(
+    raw = Subscription.query.filter(
         Subscription.user_id == current_user.id,
-        Subscription.next_payment_date <= today + timedelta(days=30),
-        Subscription.next_payment_date >= today
+        Subscription.is_active == True,
+        Subscription.next_payment_date != None
     ).order_by(Subscription.next_payment_date).all()
-    return render_template('main/upcoming_bills.html', upcoming=upcoming)
+
+    def urgency(days):
+        if days < 0:
+            return 'overdue'
+        elif days <= 7:
+            return 'urgent'
+        elif days <= 14:
+            return 'soon'
+        elif days <= 30:
+            return 'upcoming'
+        return 'later'
+
+    upcoming = []
+    for s in raw:
+        days = (s.next_payment_date - today).days
+        upcoming.append({'sub': s, 'days': days, 'urgency': urgency(days)})
+
+    total_7_days  = sum(e['sub'].monthly_cost for e in upcoming if e['days'] <= 7)
+    total_14_days = sum(e['sub'].monthly_cost for e in upcoming if e['days'] <= 14)
+    total_30_days = sum(e['sub'].monthly_cost for e in upcoming if e['days'] <= 30)
+
+    return render_template('main/upcoming_bills.html',
+                           upcoming=upcoming,
+                           total_7_days=total_7_days,
+                           total_14_days=total_14_days,
+                           total_30_days=total_30_days)
