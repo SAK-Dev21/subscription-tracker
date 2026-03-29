@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ guide.service_name }} — Cancellation Guide{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+        <h2 class="mb-0">{{ guide.service_name }}</h2>
+        {% if guide.difficulty == 'easy' %}
+        <span class="badge bg-success fs-6">Easy</span>
+        {% elif guide.difficulty == 'medium' %}
+        <span class="badge bg-warning text-dark fs-6">Medium</span>
+        {% elif guide.difficulty == 'hard' %}
+        <span class="badge bg-danger fs-6">Hard</span>
+        {% endif %}
+        {% if guide.category %}
+        <span class="badge bg-secondary fs-6">{{ guide.category | title }}</span>
+        {% endif %}
+    </div>
+    {% if guide.cost_display %}
+    <p class="text-muted mb-0">{{ guide.cost_display }}</p>
+    {% endif %}
+</div>
+
+<!-- Cancellation steps -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-list-ol me-2"></i>How to Cancel
+    </div>
+    <div class="card-body">
+        <ol class="mb-0">
+            {% for step in steps %}
+            <li class="mb-2">{{ step }}</li>
+            {% endfor %}
+        </ol>
+    </div>
+    {% if guide.cancellation_url %}
+    <div class="card-footer">
+        <a href="{{ guide.cancellation_url }}" target="_blank" rel="noopener noreferrer"
+           class="btn btn-primary">
+            <i class="bi bi-box-arrow-up-right me-1"></i>Go to Cancellation Page
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Dark pattern warning -->
+{% if guide.dark_pattern_warning %}
+<div class="alert alert-danger" role="alert">
+    <h5 class="alert-heading d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill"></i>Dark Pattern Alert
+    </h5>
+    <p class="mb-2">{{ guide.dark_pattern_warning }}</p>
+    <hr>
+    <p class="mb-0 small">Be aware of this tactic when cancelling. Stay firm — retention offers and confusing flows are designed to make you give up.</p>
+</div>
+{% endif %}
+
+<!-- Tips -->
+{% if guide.tips %}
+<div class="alert alert-info" role="alert">
+    <h5 class="alert-heading d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle-fill"></i>Tips
+    </h5>
+    <p class="mb-0">{{ guide.tips }}</p>
+</div>
+{% endif %}
+
+<a href="{{ url_for('education.cancellation_guide') }}" class="btn btn-outline-secondary mt-2">
+    <i class="bi bi-arrow-left me-1"></i>Back to Guide
+</a>
+{% endblock %}

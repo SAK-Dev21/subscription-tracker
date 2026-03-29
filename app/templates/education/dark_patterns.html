@@ -1,49 +1,105 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Dark Patterns - Subscription Tracker{% endblock %}
+{% block title %}Understanding Dark Patterns — SubTracker{% endblock %}
 
 {% block content %}
-<h2>Understanding Dark Patterns in Subscriptions</h2>
-
-<p>Dark patterns are deceptive design techniques used to trick users into actions they didn't intend. Many subscription services use these tactics to make it harder to cancel or easier to sign up unintentionally.</p>
-
-<div class="guide-section">
-    <h3>Common Dark Patterns</h3>
-
-    <div class="pattern">
-        <h4>Roach Motel</h4>
-        <p>Easy to subscribe, extremely difficult to cancel. Companies may hide cancellation options, require phone calls, or add multiple confirmation steps.</p>
-    </div>
-
-    <div class="pattern">
-        <h4>Hidden Costs</h4>
-        <p>Additional fees or charges that are only revealed late in the checkout process, such as service fees, delivery charges, or tax not shown upfront.</p>
-    </div>
-
-    <div class="pattern">
-        <h4>Forced Continuity</h4>
-        <p>A free trial that automatically converts to a paid subscription without clear warning. Your card is charged after the trial ends with no reminder.</p>
-    </div>
-
-    <div class="pattern">
-        <h4>Confirmshaming</h4>
-        <p>Using guilt-tripping language on opt-out buttons, such as "No thanks, I don't want to save money" to discourage cancellation.</p>
-    </div>
-
-    <div class="pattern">
-        <h4>Misdirection</h4>
-        <p>Drawing your attention away from the cancellation option by highlighting upgrade or retention offers instead.</p>
-    </div>
+<div class="mb-4">
+    <h2>Understanding Dark Patterns</h2>
+    <p class="text-muted">Dark patterns are design tricks used by websites and apps to manipulate you into doing things you did not intend to. Learn to recognise and protect yourself from them.</p>
 </div>
 
-<div class="guide-section">
-    <h3>How to Protect Yourself</h3>
-    <ul>
-        <li>Set calendar reminders before free trials end</li>
-        <li>Use virtual card numbers for trials when possible</li>
-        <li>Read the terms before subscribing</li>
-        <li>Track all your subscriptions in one place (like this app!)</li>
-        <li>Report dark patterns to consumer protection agencies</li>
-    </ul>
+<!-- Search -->
+<div class="mb-4 position-relative" style="max-width: 480px;">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search dark patterns..." autocomplete="off">
+    <ul id="searchDropdown" class="dropdown-menu w-100 shadow" style="display:none; position:absolute; z-index:1055;"></ul>
 </div>
+
+<!-- Browse by Category -->
+<section class="mb-5">
+    <h4 class="mb-3">Browse by Category</h4>
+    {% if categories %}
+    <div class="row g-3">
+        {% for cat in categories %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <a href="{{ url_for('education.dark_patterns_category', id=cat.id) }}"
+                           class="text-decoration-none">{{ cat.name }}</a>
+                    </h6>
+                    <p class="card-text text-muted small">{{ cat.description }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">No categories available yet.</p>
+    {% endif %}
+</section>
+
+<!-- Browse by Cognitive Bias -->
+<section class="mb-5">
+    <h4 class="mb-3">Browse by Cognitive Bias</h4>
+    {% if biases %}
+    <div class="row g-3">
+        {% for bias in biases %}
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <a href="{{ url_for('education.dark_patterns_bias', id=bias.id) }}"
+                           class="text-decoration-none">{{ bias.name }}</a>
+                    </h6>
+                    <p class="card-text text-muted small">{{ bias.description }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">No cognitive biases available yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const dropdown = document.getElementById('searchDropdown');
+
+    searchInput.addEventListener('input', async () => {
+        const q = searchInput.value.trim();
+        if (!q) {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+            return;
+        }
+
+        const res = await fetch(`/education/dark-patterns/search?q=${encodeURIComponent(q)}`);
+        const results = await res.json();
+
+        dropdown.innerHTML = '';
+        if (results.length === 0) {
+            dropdown.innerHTML = '<li><span class="dropdown-item text-muted">No results found</span></li>';
+        } else {
+            results.forEach(r => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <a class="dropdown-item" href="/education/dark-patterns/pattern/${r.id}">
+                        <div class="fw-semibold">${r.name}</div>
+                        <div class="text-muted small text-truncate">${r.category} — ${r.description}...</div>
+                    </a>`;
+                dropdown.appendChild(li);
+            });
+        }
+        dropdown.style.display = 'block';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+</script>
 {% endblock %}

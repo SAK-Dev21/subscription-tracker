@@ -1,40 +1,157 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block title %}Cancellation Guide - Subscription Tracker{% endblock %}
+{% block title %}Cancellation Guide — SubTracker{% endblock %}
 
 {% block content %}
-<h2>Subscription Cancellation Guide</h2>
-
-<p>Cancelling subscriptions can sometimes be deliberately difficult. Here are some tips to help you cancel unwanted subscriptions:</p>
-
-<div class="guide-section">
-    <h3>General Steps</h3>
-    <ol>
-        <li>Log into the service's website or app</li>
-        <li>Navigate to Account Settings or Billing</li>
-        <li>Look for "Cancel Subscription" or "Manage Plan"</li>
-        <li>Follow the cancellation flow — be prepared for retention offers</li>
-        <li>Save any confirmation emails or screenshots as proof</li>
-    </ol>
+<div class="mb-4">
+    <h2>Cancellation Guide</h2>
+    <p class="text-muted">Step-by-step instructions to cancel subscriptions. Search for a service below.</p>
 </div>
 
-<div class="guide-section">
-    <h3>If Direct Cancellation Is Difficult</h3>
-    <ul>
-        <li>Contact customer support via live chat or phone</li>
-        <li>Send a written cancellation request via email</li>
-        <li>Check if your bank can block future payments</li>
-        <li>In the UK, you may have rights under the Consumer Contracts Regulations so check online before contacting</li>
-    </ul>
+<!-- Search and filter controls -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <input type="text" id="searchInput" class="form-control" placeholder="Search services...">
+    </div>
+    <div class="col-md-6 d-flex align-items-center">
+        <div class="btn-group" role="group">
+            <button class="btn btn-outline-secondary active" data-filter="all">All</button>
+            <button class="btn btn-outline-success" data-filter="easy">Easy</button>
+            <button class="btn btn-outline-warning" data-filter="medium">Medium</button>
+            <button class="btn btn-outline-danger" data-filter="hard">Hard</button>
+        </div>
+    </div>
 </div>
 
-<div class="guide-section">
-    <h3>Tips</h3>
-    <ul>
-        <li>Cancel before your billing date to avoid being charged for another period — aim for at least a day or two before the billing date</li>
-        <li>Check for any cancellation fees in the terms of service</li>
-        <li>Some services offer a pause option instead of full cancellation</li>
-        <li>Keep records of all cancellation attempts</li>
-    </ul>
+{% if guides %}
+<div class="accordion" id="cancellationAccordion">
+    {% for guide in guides %}
+    <div class="accordion-item mb-2 border rounded"
+         data-service="{{ guide.service_name | lower }}"
+         data-difficulty="{{ guide.difficulty }}">
+
+        <h2 class="accordion-header" id="heading-{{ guide.id }}">
+            <button class="accordion-button collapsed" type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#collapse-{{ guide.id }}"
+                    aria-expanded="false"
+                    aria-controls="collapse-{{ guide.id }}">
+                <div class="d-flex flex-wrap align-items-center gap-2 w-100 me-3">
+                    <a href="{{ url_for('education.cancellation_detail', id=guide.id) }}"
+                       class="fw-semibold text-decoration-none text-dark"
+                       onclick="event.stopPropagation()">{{ guide.service_name }}</a>
+                    {% if guide.cost_display %}
+                    <span class="text-muted small">{{ guide.cost_display }}</span>
+                    {% endif %}
+                    {% if guide.category %}
+                    <span class="badge bg-secondary">{{ guide.category | title }}</span>
+                    {% endif %}
+                    {% if guide.difficulty == 'easy' %}
+                    <span class="badge bg-success ms-auto">Easy</span>
+                    {% elif guide.difficulty == 'medium' %}
+                    <span class="badge bg-warning text-dark ms-auto">Medium</span>
+                    {% elif guide.difficulty == 'hard' %}
+                    <span class="badge bg-danger ms-auto">Hard</span>
+                    {% endif %}
+                </div>
+            </button>
+        </h2>
+
+        <div id="collapse-{{ guide.id }}" class="accordion-collapse collapse"
+             aria-labelledby="heading-{{ guide.id }}"
+             data-bs-parent="#cancellationAccordion">
+            <div class="accordion-body">
+
+                <!-- Cancellation steps -->
+                <h6 class="fw-semibold mb-2">How to cancel</h6>
+                <ol class="mb-3">
+                    {% for step in steps_map[guide.id] %}
+                    <li class="mb-1">{{ step }}</li>
+                    {% endfor %}
+                </ol>
+
+                <!-- Dark pattern warning -->
+                {% if guide.dark_pattern_warning %}
+                <div class="alert alert-danger d-flex gap-2" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+                    <div>
+                        <strong>Dark Pattern Alert:</strong> {{ guide.dark_pattern_warning }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Tips -->
+                {% if guide.tips %}
+                <div class="alert alert-info d-flex gap-2" role="alert">
+                    <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+                    <div>{{ guide.tips }}</div>
+                </div>
+                {% endif %}
+
+                <!-- Cancellation link -->
+                {% if guide.cancellation_url %}
+                <a href="{{ guide.cancellation_url }}" target="_blank" rel="noopener noreferrer"
+                   class="btn btn-primary btn-sm">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Go to Cancellation Page
+                </a>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
+
+<p id="noResults" class="text-muted text-center py-4 d-none">No services match your search.</p>
+
+{% else %}
+<div class="text-center text-muted py-5">
+    <i class="bi bi-journal-x fs-1 d-block mb-3"></i>
+    <h5>No cancellation guides available yet.</h5>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const filterBtns = document.querySelectorAll('[data-filter]');
+    const items = document.querySelectorAll('.accordion-item');
+    const noResults = document.getElementById('noResults');
+
+    let currentFilter = 'all';
+
+    function applyFilters() {
+        const search = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        items.forEach(item => {
+            const name = item.dataset.service || '';
+            const difficulty = item.dataset.difficulty || '';
+
+            const matchesSearch = name.includes(search);
+            const matchesFilter = currentFilter === 'all' || difficulty === currentFilter;
+
+            if (matchesSearch && matchesFilter) {
+                item.classList.remove('d-none');
+                visibleCount++;
+            } else {
+                item.classList.add('d-none');
+            }
+        });
+
+        noResults.classList.toggle('d-none', visibleCount > 0);
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            applyFilters();
+        });
+    });
+</script>
 {% endblock %}
