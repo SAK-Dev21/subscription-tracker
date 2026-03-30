@@ -1,3 +1,4 @@
+import os
 import csv
 from app import create_app
 from app.extensions import db
@@ -9,7 +10,9 @@ with app.app_context():
     db.session.query(CancellationGuide).delete()
 
     count = 0
-    with open('../cancellation_data.csv', newline='', encoding='utf-8') as f:
+    
+    csv_path = os.path.join(os.path.dirname(__file__), '..', 'cancellation_data.csv')
+    with open(csv_path, newline='', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             guide = CancellationGuide(
