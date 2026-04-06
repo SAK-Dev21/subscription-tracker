@@ -27,6 +27,10 @@ def register():
             flash('Password must be at least 8 characters.', 'danger')
             return redirect(url_for('auth.register'))
 
+        if User.query.filter_by(username=username).first():
+            flash('That username is already taken.', 'danger')
+            return redirect(url_for('auth.register'))
+
         if User.query.filter_by(email=email).first():
             flash('An account with that email already exists.', 'danger')
             return redirect(url_for('auth.register'))
