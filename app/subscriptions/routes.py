@@ -89,6 +89,7 @@ def edit(id):
         subscription.category = category
         subscription.cancellation_url = cancellation_url
         subscription.notes = notes
+        subscription.is_active = request.form.get('is_active') == 'on'
 
         if next_payment_date_str:
             subscription.next_payment_date = datetime.strptime(next_payment_date_str, '%Y-%m-%d').date()
