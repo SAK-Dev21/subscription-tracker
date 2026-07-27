@@ -1,6 +1,6 @@
 # Subscription Tracker
 
-A web application built with Flask for tracking personal subscriptions, monitoring spending, and educating users about subscription dark patterns and cancellation tactics. Developed as a Year 3 dissertation project.
+A web application built with Flask for tracking personal subscriptions, monitoring spending, and educating users about subscription dark patterns and cancellation tactics. Developed as a Year 3 dissertation project. Demo video for viewing: [https://youtu.be/tzBkItnCnpE](https://youtu.be/tzBkItnCnpE).
 
 
 ## Overview
